@@ -97,8 +97,8 @@ class Validation
     public function __invoke($request, RequestHandlerInterface $handler)
     {
         $this->errors = [];
-        $params = $request->getParams();
-        $params = array_merge((array)$request->getAttribute('routeInfo')[2], $params);
+        $params = $request->getServerParams() ?? $request->getParams();
+        $params = array_merge(empty($d = (array) $request->getAttribute('routeInfo')) ? [] : $d[2] , $params);
         $this->validate($params, $this->validators);
 
         $request = $request->withAttribute($this->errors_name, $this->getErrors());
