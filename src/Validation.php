@@ -97,15 +97,21 @@ class Validation
     public function __invoke($request, RequestHandlerInterface $handler)
     {
         $this->errors = [];
-        $params = $request->getServerParams() ?? $request->getParams();
+        if(class_exists('\\Slim\\Routing\\RouteContext')) {
+            $routeContext = \Slim\Routing\RouteContext::fromRequest($request);
+            $route = $routeContext->getRoute();
+            $r = $route->getArguments();
+            $request = $request->withAttribute('routeInfo', [0, 1, $r ]) ;
+        }
+       
+        $params = method_exists($request,'getParams')? $request->getParams() : $request->getServerParams() ;
         $params = array_merge(empty($d = (array) $request->getAttribute('routeInfo')) ? [] : $d[2] , $params);
         $this->validate($params, $this->validators);
-
         $request = $request->withAttribute($this->errors_name, $this->getErrors());
         $request = $request->withAttribute($this->has_errors_name, $this->hasErrors());
         $request = $request->withAttribute($this->validators_name, $this->getValidators());
         $request = $request->withAttribute($this->translator_name, $this->getTranslator());
-
+        
         return $handler->handle($request);
     }
 
@@ -132,7 +138,9 @@ class Validation
                     if ($this->translator) {
                         $exception->setParam('translator', $this->translator);
                     }
+                    
                     $this->errors[implode('.', $actualKeys)] = $exception->getMessages();
+                    
                 }
             }
 
